@@ -78,7 +78,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-// Copy button component
+// Copy button component - UPDATED WITH GREEN COLORS
 const CopyButton = ({ storeUrl }: { storeUrl: string }) => {
   const [copied, setCopied] = useState(false);
 
@@ -103,7 +103,7 @@ const CopyButton = ({ storeUrl }: { storeUrl: string }) => {
             "p-1 rounded-md transition-all",
             copied
               ? "bg-green-100 text-green-600"
-              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
+              : "text-green-500 hover:text-green-700 hover:bg-green-50",
           )}
         >
           {copied ? (
@@ -141,10 +141,14 @@ export default function DashboardLayout({
       if (window.innerWidth >= 1024 && mobileSidebarOpen) {
         setMobileSidebarOpen(false);
       }
+      // Auto close sidebar on small screens
+      if (window.innerWidth < 1024 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [mobileSidebarOpen]);
+  }, [mobileSidebarOpen, sidebarOpen]);
 
   // During SSR and initial hydration, render without user-dependent content
   if (!mounted) {
@@ -220,7 +224,7 @@ export default function DashboardLayout({
             </header>
 
             {/* Page content */}
-            <main className="p-6">{children}</main>
+            <main className="p-4 sm:p-6">{children}</main>
           </div>
         </div>
       </TooltipProvider>
@@ -410,8 +414,8 @@ export default function DashboardLayout({
           )}
         >
           {/* Top bar */}
-          <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
-            <div className="flex items-center justify-between h-16 px-4">
+          <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+            <div className="flex items-center justify-between h-16 px-3 sm:px-4">
               <button
                 onClick={() => setMobileSidebarOpen(true)}
                 className="p-2 rounded-lg hover:bg-gray-100 lg:hidden"
@@ -421,35 +425,27 @@ export default function DashboardLayout({
 
               <div className="flex-1" />
 
-              <div className="flex items-center gap-2 sm:gap-4">
-                {/* Store link with copy functionality */}
+              <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
+                {/* Store link with copy functionality - Desktop */}
                 {user?.vendor?.storeSlug && (
                   <>
-                    {/* Info text - responsive */}
-                    <div className="hidden sm:flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg">
-                      <span className="text-xs text-blue-700 whitespace-nowrap">
-                        💡 Click the copy icon to share your store link with
-                        customers
-                      </span>
-                    </div>
-
-                    {/* Mobile version */}
-                    <div className="sm:hidden flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg">
-                      <span className="text-xs text-blue-700 whitespace-nowrap">
-                        💡 Click copy icon to share
+                    {/* Info text - hidden on mobile, visible on tablet and up */}
+                    <div className="hidden sm:flex items-center gap-1 bg-blue-50 px-2 md:px-3 py-1.5 rounded-lg">
+                      <span className="text-[10px] md:text-xs text-blue-700 whitespace-nowrap">
+                        Click the copy icon to share your store link
                       </span>
                     </div>
 
                     {/* Store link and copy button */}
-                    <div className="flex items-center gap-1 sm:gap-2 bg-gray-50 rounded-lg px-2 sm:px-3 py-1.5">
+                    <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-1.5 sm:px-2 md:px-3 py-1.5">
                       <Link
                         href={`/${user.vendor.storeSlug}`}
-                        className="group flex items-center text-xs sm:text-sm font-medium text-gray-700 hover:text-green-600 transition-colors"
+                        className="group flex items-center text-[10px] sm:text-xs md:text-sm font-medium text-gray-700 hover:text-green-600 transition-colors"
                         target="_blank"
                       >
                         <span className="hidden xs:inline">My Store</span>
                         <span className="xs:hidden">Store</span>
-                        <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </Link>
 
                       <CopyButton
@@ -459,30 +455,32 @@ export default function DashboardLayout({
                   </>
                 )}
 
-                {/* Separator */}
+                {/* Separator - hidden on mobile */}
                 {user?.vendor?.storeSlug && (
-                  <div className="hidden md:block w-px h-6 bg-gray-200" />
+                  <div className="hidden sm:block w-px h-6 bg-gray-200" />
                 )}
 
-                {/* Notification Bell */}
-                <NotificationBell />
+                {/* Notification Bell - responsive sizing */}
+                <div className="scale-90 sm:scale-100">
+                  <NotificationBell />
+                </div>
 
                 {/* Explore Marketplace Button - Desktop */}
-                <Link href="/explore" className="hidden md:block">
-                  <button className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
-                    <Compass className="h-4 w-4" />
-                    <span className="text-sm font-medium">Explore</span>
+                <Link href="/explore" className="hidden sm:block">
+                  <button className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Compass className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                    <span className="text-xs md:text-sm font-medium">Explore</span>
                   </button>
                 </Link>
 
-                {/* Explore Marketplace Button - Mobile */}
-                <Link href="/explore" className="md:hidden">
+                {/* Explore Marketplace Button - Mobile Icon Only */}
+                <Link href="/explore" className="sm:hidden">
                   <button className="p-2 rounded-lg bg-[#10b981]/10 hover:bg-[#10b981]/20 transition-colors">
                     <Compass className="h-5 w-5 text-[#10b981]" />
                   </button>
                 </Link>
 
-                {/* Analytics button */}
+                {/* Analytics button - hidden on tablet and below */}
                 <button className="hidden lg:block p-2 rounded-lg hover:bg-gray-100 relative">
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                   <BarChart3 className="h-5 w-5 text-gray-600" />
@@ -492,7 +490,7 @@ export default function DashboardLayout({
           </header>
 
           {/* Page content */}
-          <main className="p-4 sm:p-6">{children}</main>
+          <main className="p-3 sm:p-4 md:p-6">{children}</main>
         </div>
       </div>
     </TooltipProvider>

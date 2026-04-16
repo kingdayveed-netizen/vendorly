@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useExplore } from "@/hooks/useExplore";
-import Button from "@/components/ui/Button";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/badge";
 import {
-  Filter,
   ChevronRight,
   Heart,
   Star,

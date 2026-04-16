@@ -142,8 +142,9 @@ export const ExploreHeader = ({
             <Button
               variant="ghost"
               size="sm"
-              className="relative hover:bg-[#f3f4f6] transition-all duration-200 hover:scale-105"
+              className="relative hover:bg-[#f3f4f6] transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed"
               onClick={() => router.push("/cart")}
+              disabled 
             >
               <ShoppingCart className="h-5 w-5 text-[#6b7280] hover:text-[#10b981] transition-colors" />
               {cartCount > 0 && (
