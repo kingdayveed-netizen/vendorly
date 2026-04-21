@@ -119,7 +119,7 @@ export const ProductCard = ({
         {/* Wishlist Button - Smaller */}
         {/* Favorite Button - Always visible with high z-index */}
         <div className="absolute top-2 right-2 z-20">
-          <FavoriteButton productId={product.id} size="sm" isWishlisted={isWishlisted}/>
+          {/* <FavoriteButton productId={product.id} size="sm" isWishlisted={isWishlisted}/> */}
         </div>
 
         {/* Stats Badge - Smaller */}

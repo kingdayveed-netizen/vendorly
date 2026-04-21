@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import {
@@ -16,6 +16,9 @@ export const useFavorites = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items, favoritesMap, isLoading, hasMore, nextCursor, error } =
     useSelector((state: RootState) => state.favorites);
+
+  // Track pending toggles per product to prevent duplicate requests
+  const pendingTogglesRef = useRef<Map<string, Promise<any>>>(new Map());
 
   // Load favorites
   const loadFavorites = useCallback(
@@ -44,12 +47,25 @@ export const useFavorites = () => {
   // Add to favorites (with optimistic update)
   const addToFavorites = useCallback(
     async (productId: string) => {
+      // Check if already pending
+      if (pendingTogglesRef.current.has(productId)) {
+        console.log(`Already adding product ${productId}, reusing promise`);
+        return pendingTogglesRef.current.get(productId);
+      }
+
       dispatch(optimisticToggle(productId));
+
+      const promise = dispatch(addFavorite(productId)).unwrap();
+      pendingTogglesRef.current.set(productId, promise);
+
       try {
-        await dispatch(addFavorite(productId)).unwrap();
+        const result = await promise;
+        return result;
       } catch (error) {
         dispatch(revertOptimisticToggle(productId));
         throw error;
+      } finally {
+        pendingTogglesRef.current.delete(productId);
       }
     },
     [dispatch],
@@ -58,12 +74,25 @@ export const useFavorites = () => {
   // Remove from favorites (with optimistic update)
   const removeFromFavorites = useCallback(
     async (productId: string) => {
+      // Check if already pending
+      if (pendingTogglesRef.current.has(productId)) {
+        console.log(`Already removing product ${productId}, reusing promise`);
+        return pendingTogglesRef.current.get(productId);
+      }
+
       dispatch(optimisticToggle(productId));
+
+      const promise = dispatch(removeFavorite(productId)).unwrap();
+      pendingTogglesRef.current.set(productId, promise);
+
       try {
-        await dispatch(removeFavorite(productId)).unwrap();
+        const result = await promise;
+        return result;
       } catch (error) {
         dispatch(revertOptimisticToggle(productId));
         throw error;
+      } finally {
+        pendingTogglesRef.current.delete(productId);
       }
     },
     [dispatch],
@@ -72,12 +101,29 @@ export const useFavorites = () => {
   // Toggle favorite
   const toggle = useCallback(
     async (productId: string) => {
+      // If there's already a pending toggle for this product, return that promise
+      if (pendingTogglesRef.current.has(productId)) {
+        console.log(`Already toggling product ${productId}, reusing promise`);
+        return pendingTogglesRef.current.get(productId);
+      }
+
+      // Optimistically update UI
       dispatch(optimisticToggle(productId));
+
+      // Create the API call promise
+      const promise = dispatch(toggleFavorite(productId)).unwrap();
+      pendingTogglesRef.current.set(productId, promise);
+
       try {
-        await dispatch(toggleFavorite(productId)).unwrap();
+        const result = await promise;
+        return result;
       } catch (error) {
+        // Revert on error
         dispatch(revertOptimisticToggle(productId));
         throw error;
+      } finally {
+        // Clean up
+        pendingTogglesRef.current.delete(productId);
       }
     },
     [dispatch],

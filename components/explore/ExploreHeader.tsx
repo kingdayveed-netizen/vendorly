@@ -129,6 +129,7 @@ export const ExploreHeader = ({
               size="sm"
               className="relative hover:bg-[#f3f4f6] transition-all duration-200 hover:scale-105"
               onClick={() => router.push("/wishlist")}
+              disabled
             >
               <Heart className="h-5 w-5 text-[#6b7280] hover:text-[#10b981] transition-colors" />
               {wishlistCount > 0 && (
@@ -235,23 +236,23 @@ export const ExploreHeader = ({
                         </Link>
                       )}
 
-                      <Link
-                        href="/settings"
+                      {/* <Link
+                        href="/dashboard/settings"
                         className="flex items-center gap-2 px-4 py-2 text-sm text-[#374151] hover:bg-[#f3f4f6] transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <Settings className="h-4 w-4" />
                         Settings
-                      </Link>
+                      </Link> */}
 
-                      <Link
+                      {/* <Link
                         href="/help"
                         className="flex items-center gap-2 px-4 py-2 text-sm text-[#374151] hover:bg-[#f3f4f6] transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <HelpCircle className="h-4 w-4" />
                         Help & Support
-                      </Link>
+                      </Link> */}
 
                       <div className="border-t border-[#e5e7eb] my-1" />
 

@@ -10,13 +10,13 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { useProduct } from "@/hooks/useProducts";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Image as ImageIcon, ChevronDown, Check } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   price: z.number().min(0, "Price must be positive"),
-  category: z.string().min(1, "Category is required"),
+  categories: z.array(z.string()).min(1, "At least one category is required"),
   quantity: z.number().min(0, "Quantity must be positive"),
   images: z
     .any()
@@ -25,10 +25,32 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+// Predefined categories
+const categories = [
+  { value: "Clothing", label: "👕 Clothing" },
+  { value: "Electronics", label: "📱 Electronics" },
+  { value: "Accessories", label: "💍 Accessories" },
+  { value: "Home & Living", label: "🏠 Home & Living" },
+  { value: "Beauty & Personal Care", label: "💄 Beauty & Personal Care" },
+  { value: "Food & Beverages", label: "🍕 Food & Beverages" },
+  { value: "Sports & Outdoors", label: "⚽ Sports & Outdoors" },
+  { value: "Toys & Games", label: "🎮 Toys & Games" },
+  { value: "Books & Media", label: "📚 Books & Media" },
+  { value: "Health & Wellness", label: "💊 Health & Wellness" },
+  { value: "Automotive", label: "🚗 Automotive" },
+  { value: "Pet Supplies", label: "🐾 Pet Supplies" },
+  { value: "Baby Products", label: "👶 Baby Products" },
+  { value: "Office Supplies", label: "📎 Office Supplies" },
+  { value: "Other", label: "📦 Other" },
+];
+
+const MAX_CATEGORIES = 3;
+
 export default function AddProductForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const { createProduct } = useProduct();
   const { showToast } = useToast();
   const router = useRouter();
@@ -39,17 +61,20 @@ export default function AddProductForm() {
     formState: { errors },
     setValue,
     reset,
+    watch,
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
       description: "",
       price: 0,
-      category: "",
+      categories: [],
       quantity: 0,
       images: [],
     },
   });
+
+  const selectedCategories = watch("categories") || [];
 
   // Clean up previews when component unmounts
   useEffect(() => {
@@ -90,6 +115,28 @@ export default function AddProductForm() {
     setImagePreviews(newPreviews);
   };
 
+  const handleCategoryToggle = (categoryValue: string) => {
+    const currentCategories = [...selectedCategories];
+    
+    if (currentCategories.includes(categoryValue)) {
+      // Remove category
+      const newCategories = currentCategories.filter(c => c !== categoryValue);
+      setValue("categories", newCategories);
+    } else {
+      // Add category - check limit
+      if (currentCategories.length >= MAX_CATEGORIES) {
+        showToast(`You can only select up to ${MAX_CATEGORIES} categories`, "error");
+        return;
+      }
+      setValue("categories", [...currentCategories, categoryValue]);
+    }
+  };
+
+  const removeCategory = (categoryValue: string) => {
+    const newCategories = selectedCategories.filter(c => c !== categoryValue);
+    setValue("categories", newCategories);
+  };
+
   const onSubmit = async (data: ProductFormData) => {
     try {
       setIsLoading(true);
@@ -100,9 +147,10 @@ export default function AddProductForm() {
       formData.append("description", data.description);
       formData.append("price", data.price.toString());
       formData.append("quantity", data.quantity.toString());
-      formData.append("category", data.category);
+      // Send categories as a JSON string (backend should parse)
+      formData.append("categories", JSON.stringify(data.categories));
 
-      // Append each image file"
+      // Append each image file
       selectedFiles.forEach((file) => {
         formData.append("images", file);
       });
@@ -124,6 +172,15 @@ export default function AddProductForm() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Get display label for selected categories
+  const getSelectedCategoriesDisplay = () => {
+    if (selectedCategories.length === 0) return "Select categories";
+    const selectedLabels = selectedCategories.map(
+      cat => categories.find(c => c.value === cat)?.label || cat
+    );
+    return selectedLabels.join(", ");
   };
 
   return (
@@ -232,26 +289,93 @@ export default function AddProductForm() {
             )}
           </div>
 
-          {/* Category */}
+          {/* Categories Multi-Select Dropdown */}
           <div className="space-y-2">
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Category
+            <label className="block text-sm font-medium text-gray-700">
+              Categories <span className="text-xs text-gray-500">(max {MAX_CATEGORIES})</span>
             </label>
-            <Input
-              id="category"
-              type="text"
-              placeholder="Clothing, Electronics, etc."
-              className="border-gray-300 focus:border-green-500 focus:ring-green-500"
-              {...register("category")}
-            />
-            {errors.category && (
+            
+            {/* Selected Categories Tags */}
+            {selectedCategories.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {selectedCategories.map((cat) => {
+                  const category = categories.find(c => c.value === cat);
+                  return (
+                    <span
+                      key={cat}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded-md border border-green-200"
+                    >
+                      {category?.label || cat}
+                      <button
+                        type="button"
+                        onClick={() => removeCategory(cat)}
+                        className="hover:text-red-500 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+              >
+                <span className={selectedCategories.length > 0 ? "text-gray-900" : "text-gray-400"}>
+                  {selectedCategories.length === 0 
+                    ? "Select categories" 
+                    : `${selectedCategories.length} category${selectedCategories.length !== 1 ? "ies" : ""} selected`}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isCategoryOpen ? "rotate-180" : ""}`} />
+              </button>
+              
+              {isCategoryOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10"
+                    onClick={() => setIsCategoryOpen(false)}
+                  />
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {categories.map((category) => {
+                      const isSelected = selectedCategories.includes(category.value);
+                      const isDisabled = !isSelected && selectedCategories.length >= MAX_CATEGORIES;
+                      
+                      return (
+                        <button
+                          key={category.value}
+                          type="button"
+                          onClick={() => handleCategoryToggle(category.value)}
+                          disabled={isDisabled}
+                          className={`
+                            w-full flex items-center justify-between px-3 py-2 text-sm transition-colors
+                            ${isSelected 
+                              ? "bg-green-50 text-green-600" 
+                              : isDisabled
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-gray-700 hover:bg-green-50"}
+                          `}
+                        >
+                          <span>{category.label}</span>
+                          {isSelected && <Check className="h-4 w-4 text-green-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+            {errors.categories && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.category.message}
+                {errors.categories.message}
               </p>
             )}
+            <p className="text-xs text-gray-500 mt-1">
+              You can select up to {MAX_CATEGORIES} categories for better product discoverability
+            </p>
           </div>
 
           {/* Price and Quantity Grid */}

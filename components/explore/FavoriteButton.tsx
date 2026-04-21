@@ -94,8 +94,6 @@ export const FavoriteButton = ({
             iconSizes[size],
             "transition-all duration-200",
             (isFavorited || isWishlisted) && "fill-white text-white scale-110",
-            isFavorited ? "scale-110" : "",
-            optimistic && "animate-pulse",
             !(isFavorited || isWishlisted) && isHovered && "scale-110"
           )
         }
