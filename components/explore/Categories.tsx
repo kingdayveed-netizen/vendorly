@@ -24,6 +24,8 @@ import {
   Trophy,
   Cookie,
   HeartPulse,
+  Blinds,
+  Beef,
 } from "lucide-react";
 
 // Icon mapping for different categories
@@ -49,7 +51,9 @@ const categoryIcons: Record<string, any> = {
   "Pet Supplies": PawPrint,
   "Toys & Games": ToyBrick,
   "Beauty & Personal Care": Laugh,
-  Sports: Trophy,
+  "Home & Living": Blinds,
+  "Food & Beverages": Beef,
+  "Sports & Outdoors": Trophy,
   Food: Cookie,
   Beauty: HeartPulse,
   Phones: Phone,
