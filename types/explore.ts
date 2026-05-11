@@ -4,7 +4,9 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  images: string[];
+  images: {
+    url: string
+  }[];
   category: string;
   tags: string[];
   quantity: number;
@@ -15,6 +17,10 @@ export interface Product {
   // Aggregated stats
   ordersCount?: number;
   products?: string[];
+  analytics?: {
+    views: number;
+    ordersCount: number;
+  }
 
   vendor: {
     id: string;

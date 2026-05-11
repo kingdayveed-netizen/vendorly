@@ -6,7 +6,7 @@ export interface StoreProduct {
   name: string;
   description: string;
   price: number;
-  images: string[];
+  images: { url: string }[];
   category: string;
   tags: string[];
   quantity: number;

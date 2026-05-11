@@ -4,9 +4,17 @@ export interface Product {
   description: string;
   price: number;
   quantity: number;
-  images: string[];
+  images: {
+    url: string;
+  }[];
   vendorId: string;
-  category: string;
+  category: {
+    productId: string;
+    categoryId: string;
+    category: {
+      name: string;
+    };
+  }[];
   tags: string[];
   vendor?: {
     id: string;
@@ -26,8 +34,6 @@ export interface CreateProductDto {
   category: string;
 }
 
-
 export interface UpdateProductDto extends Partial<CreateProductDto> {
   id: string;
 }
-

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useStore } from "@/hooks/useStore";
-import StoreHeader from "@/components/storefront/StoreHeader"; 
+import StoreHeader from "@/components/storefront/StoreHeader";
 import ProductGrid from "@/components/storefront/ProductGrid";
 import ProductModal from "@/components/storefront/ProductModal";
 import { Loader2 } from "lucide-react";
@@ -52,8 +52,9 @@ export default function StorePage() {
     );
   }
 
-
   const categories = getCategories();
+  const flatCategories = categories.flat();
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -65,12 +66,13 @@ export default function StorePage() {
           <button className="px-4 py-2 bg-green-500 text-white rounded-full text-sm font-medium">
             All Products
           </button>
-          {categories.map((category) => (
+
+          {flatCategories.map((item: any) => (
             <button
-              key={category}
+              key={item.categoryId}
               className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:border-green-500 hover:text-green-600 transition-colors"
             >
-              {category}
+              {item.category?.name}
             </button>
           ))}
         </div>

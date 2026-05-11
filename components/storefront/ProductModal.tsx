@@ -80,7 +80,7 @@ export default function ProductModal({
             {product.images.length > 0 ? (
               <>
                 <Image
-                  src={product.images[currentImageIndex]}
+                  src={product.images[currentImageIndex].url}
                   alt={product.name}
                   fill
                   className="object-cover"

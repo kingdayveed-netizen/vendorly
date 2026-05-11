@@ -19,7 +19,7 @@ import {
   setTrendingWeek,
   setLoadingTopVendors,
   setTopVendorsError,
-  setTopVendors,
+  setTopVendors,  
 } from "@/redux/slices/exploreSlice";
 import { ExploreFilters } from "@/types/explore";
 
@@ -48,9 +48,10 @@ export const useExplore = (productId?: string) => {
           );
         } else {
           response = await exploreService.getTopProducts(page, limit);
+          console.log(response)
         }
 
-        dispatch(setProducts(response));
+        dispatch(setProducts(response));  
         return response;
       } catch (error: any) {
         dispatch(

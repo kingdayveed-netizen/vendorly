@@ -12,6 +12,7 @@ import {
   Info,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { toast } from "sonner";
 import Input from "@/components/ui/Input";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useProduct } from "@/hooks/useProducts";
@@ -158,7 +159,7 @@ const ProductCard = ({
 
   // Get the first image or use placeholder
   const productImage =
-    product.images && product.images.length > 0 ? product.images[0] : null;
+    product.images && product.images.length > 0 ? product.images[0].url : null;
 
   // Stock status
   const getStockStatus = () => {
@@ -228,6 +229,34 @@ const ProductCard = ({
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImageOff className="h-12 w-12 text-gray-300" />
+
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    window.open(`/product/${product.id}`, "_blank")
+                  }
+                  className="p-2 bg-white rounded-full shadow-lg hover:bg-green-500 hover:text-white transition-colors"
+                  title="View Product"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => onEdit(product.id)}
+                  className="p-2 bg-white rounded-full shadow-lg hover:bg-green-500 hover:text-white transition-colors"
+                  title="Edit Product"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => onDelete(product.id)}
+                  className="p-2 bg-white rounded-full shadow-lg hover:bg-red-500 hover:text-white transition-colors"
+                  title="Delete Product"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -264,14 +293,16 @@ const ProductCard = ({
           Array.isArray(product.category) &&
           product.category.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {product.category.map((cat: string, index: number) => (
-                <span
-                  key={index}
-                  className="inline-block px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600"
-                >
-                  {cat}
-                </span>
-              ))}
+              {product.category.map(
+                (cat: { category: { name: string } }, index: number) => (
+                  <span
+                    key={index}
+                    className="inline-block px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600"
+                  >
+                    {cat.category.name}
+                  </span>
+                ),
+              )}
             </div>
           )}
 
@@ -318,7 +349,11 @@ export default function ProductsPage() {
   // Get unique categories from products
   const categories = useMemo(() => {
     if (!vendorProducts.data) return [];
-    const cats = vendorProducts.data.map((p) => p.category).filter(Boolean);
+
+    const cats = vendorProducts.data.flatMap((p) =>
+      p.category.map((c: any) => c.category.name),
+    );
+
     return ["All", ...new Set(cats)];
   }, [vendorProducts.data]);
 
@@ -339,8 +374,8 @@ export default function ProductsPage() {
 
     // Apply category filter
     if (selectedCategory && selectedCategory !== "All") {
-      filtered = filtered.filter(
-        (product) => product.category === selectedCategory,
+      filtered = filtered.filter((product) =>
+        product.category.some((c: any) => c.category.name === selectedCategory),
       );
     }
 
@@ -401,6 +436,7 @@ export default function ProductsPage() {
       try {
         await deleteProduct.mutateAsync(productId);
       } catch (error) {
+        showToast("Failed to delete product. Please try again.", "error"); 
         console.error("Error deleting product:", error);
       }
     }

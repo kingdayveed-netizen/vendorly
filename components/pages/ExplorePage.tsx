@@ -224,8 +224,6 @@ export default function Explore() {
         break;
     }
 
-    console.log(products) 
-
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#f9fafb] to-white">
         <ExploreHeader
@@ -369,9 +367,9 @@ export default function Explore() {
               <div className="group/card">
                 <Card className="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5 border border-[#e5e7eb] bg-white rounded-lg">
                   <div className="relative aspect-square bg-gradient-to-br from-[#f9fafb] to-[#f3f4f6] overflow-hidden">
-                    {product.images?.[0]?.startsWith("http") ? (
+                    {product.images?.[0]?.url.startsWith("http") ? (
                       <img
-                        src={product.images[0]}
+                        src={product.images[0].url}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
                       />

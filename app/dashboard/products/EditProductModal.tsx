@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, Upload, Save } from "lucide-react";
+import { X, Upload, Save, ChevronDown, Check } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Image from "next/image";
@@ -16,12 +16,33 @@ const editProductSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   price: z.number().min(0, "Price must be positive"),
-  category: z.string().min(1, "Category is required"),
+  category: z.array(z.string()).min(1, "At least one category is required"),
   quantity: z.number().min(0, "Quantity must be positive"),
   images: z.any().optional(),
 });
 
 type EditProductFormData = z.infer<typeof editProductSchema>;
+
+// Predefined categories (same as AddProductForm)
+const categories = [
+  { value: "Clothing", label: "👕 Clothing" },
+  { value: "Electronics", label: "📱 Electronics" },
+  { value: "Accessories", label: "💍 Accessories" },
+  { value: "Home & Living", label: "🏠 Home & Living" },
+  { value: "Beauty & Personal Care", label: "💄 Beauty & Personal Care" },
+  { value: "Food & Beverages", label: "🍕 Food & Beverages" },
+  { value: "Sports & Outdoors", label: "⚽ Sports & Outdoors" },
+  { value: "Toys & Games", label: "🎮 Toys & Games" },
+  { value: "Books & Media", label: "📚 Books & Media" },
+  { value: "Health & Wellness", label: "💊 Health & Wellness" },
+  { value: "Automotive", label: "🚗 Automotive" },
+  { value: "Pet Supplies", label: "🐾 Pet Supplies" },
+  { value: "Baby Products", label: "👶 Baby Products" },
+  { value: "Office Supplies", label: "📎 Office Supplies" },
+  { value: "Other", label: "📦 Other" },
+];
+
+const MAX_CATEGORIES = 3;
 
 interface EditProductModalProps {
   isOpen: boolean;
@@ -41,6 +62,7 @@ export default function EditProductModal({
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const { updateProduct } = useProduct();
   const { showToast } = useToast();
 
@@ -49,10 +71,12 @@ export default function EditProductModal({
     handleSubmit,
     formState: { errors },
     setValue,
-    reset,
+    watch,
   } = useForm<EditProductFormData>({
     resolver: zodResolver(editProductSchema),
   });
+
+  const selectedCategories = watch("category") || [];
 
   // Populate form with product data when modal opens
   useEffect(() => {
@@ -60,11 +84,16 @@ export default function EditProductModal({
       setValue("name", product.name);
       setValue("description", product.description);
       setValue("price", product.price);
-      setValue("category", product.category);
+
+      // Extract category names from product categories
+      const categoryNames = product.category?.map((c: any) => c.category.name) || [];
+      setValue("category", categoryNames);
+
       setValue("quantity", product.quantity);
 
       // Set existing images
-      setExistingImages(product.images || []);
+      const imageUrls = product.images?.map((img: any) => img.url) || [];
+      setExistingImages(imageUrls);
       setImagePreviews([]);
       setSelectedFiles([]);
       setImagesToRemove([]);
@@ -117,6 +146,33 @@ export default function EditProductModal({
     );
   };
 
+  const handleCategoryToggle = (categoryValue: string) => {
+    const currentCategories = [...selectedCategories];
+
+    if (currentCategories.includes(categoryValue)) {
+      // Remove category
+      const newCategories = currentCategories.filter(
+        (c) => c !== categoryValue,
+      );
+      setValue("category", newCategories);
+    } else {
+      // Add category - check limit
+      if (currentCategories.length >= MAX_CATEGORIES) {
+        showToast(
+          `You can only select up to ${MAX_CATEGORIES} categories`,
+          "error",
+        );
+        return;
+      }
+      setValue("category", [...currentCategories, categoryValue]);
+    }
+  };
+
+  const removeCategory = (categoryValue: string) => {
+    const newCategories = selectedCategories.filter((c) => c !== categoryValue);
+    setValue("category", newCategories);
+  };
+
   const onSubmit = async (data: EditProductFormData) => {
     try {
       setIsLoading(true);
@@ -126,10 +182,7 @@ export default function EditProductModal({
       formData.append("description", data.description);
       formData.append("price", data.price.toString());
       formData.append("quantity", data.quantity.toString());
-      formData.append("category", data.category);
-
-      // Append existing images that weren't removed
-    //   formData.append("existingImages", JSON.stringify(existingImages)); 
+      formData.append("category", JSON.stringify(data.category));
 
       // Append new image files
       selectedFiles.forEach((file) => {
@@ -137,8 +190,8 @@ export default function EditProductModal({
       });
 
       // Append images to remove
-      if (imagesToRemove.length > 0) {  
-        formData.append("imagesToRemove", JSON.stringify(imagesToRemove));  
+      if (imagesToRemove.length > 0) {
+        formData.append("imagesToRemove", JSON.stringify(imagesToRemove));
       }
 
       await updateProduct.mutateAsync({ id: product.id, formData });
@@ -293,20 +346,113 @@ export default function EditProductModal({
                 )}
               </div>
 
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
+              {/* Categories Multi-Select Dropdown - Same as AddProductForm */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Categories{" "}
+                  <span className="text-xs text-gray-500">
+                    (max {MAX_CATEGORIES})
+                  </span>
                 </label>
-                <Input
-                  {...register("category")}
-                  className="border-gray-300 focus:border-green-500 focus:ring-green-500"
-                />
+
+                {/* Selected Categories Tags */}
+                {selectedCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {selectedCategories.map((cat) => {
+                      const category = categories.find((c) => c.value === cat);
+                      return (
+                        <span
+                          key={cat}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded-md border border-green-200"
+                        >
+                          {category?.label || cat}
+                          <button
+                            type="button"
+                            onClick={() => removeCategory(cat)}
+                            className="hover:text-red-500 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                  >
+                    <span
+                      className={
+                        selectedCategories.length > 0
+                          ? "text-gray-900"
+                          : "text-gray-400"
+                      }
+                    >
+                      {selectedCategories.length === 0
+                        ? "Select categories"
+                        : `${selectedCategories.length} category${selectedCategories.length !== 1 ? "ies" : ""} selected`}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isCategoryOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {isCategoryOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setIsCategoryOpen(false)}
+                      />
+                      <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {categories.map((category) => {
+                          const isSelected = selectedCategories.includes(
+                            category.value,
+                          );
+                          const isDisabled =
+                            !isSelected &&
+                            selectedCategories.length >= MAX_CATEGORIES;
+
+                          return (
+                            <button
+                              key={category.value}
+                              type="button"
+                              onClick={() => handleCategoryToggle(category.value)}
+                              disabled={isDisabled}
+                              className={`
+                                w-full flex items-center justify-between px-3 py-2 text-sm transition-colors
+                                ${
+                                  isSelected
+                                    ? "bg-green-50 text-green-600"
+                                    : isDisabled
+                                      ? "text-gray-400 cursor-not-allowed"
+                                      : "text-gray-700 hover:bg-green-50"
+                                }
+                              `}
+                            >
+                              <span>{category.label}</span>
+                              {isSelected && (
+                                <Check className="h-4 w-4 text-green-600" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
                 {errors.category && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.category.message}
                   </p>
                 )}
+                <p className="text-xs text-gray-500 mt-1">
+                  You can select up to {MAX_CATEGORIES} categories for better
+                  product discoverability
+                </p>
               </div>
 
               {/* Price and Quantity Grid */}

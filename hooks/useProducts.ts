@@ -6,6 +6,7 @@ import { Product, CreateProductDto, UpdateProductDto } from "@/types/product";
 import { setProducts } from "@/redux/slices/productSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
+import { toast } from "sonner";
 
 export const useProduct = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,11 +32,11 @@ export const useProduct = () => {
       queryKey: ["product", productId],
       queryFn: async () => {
         const response = await axiosInstance.get<Product>(
-          `/products/${productId}`, 
+          `/products/${productId}`,
         );
         return response.data;
       },
-      enabled: !!productId, // Only run if productId exists 
+      enabled: !!productId, // Only run if productId exists
     });
   };
 
@@ -101,11 +102,15 @@ export const useProduct = () => {
 
   const deleteProduct = useMutation({
     mutationFn: async (productId: string) => {
-      await axiosInstance.delete(`/products/${productId}`);
-      return productId;
+      const res = await axiosInstance.delete(`/products/${productId}`);
+      return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      toast.success(data.message, { position: "top-center" });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response.data.message);
     },
   });
 

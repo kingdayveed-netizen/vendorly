@@ -62,6 +62,9 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
     }
   };
 
+  const productImage =
+    product.images && product.images.length > 0 ? product.images[0].url : null;
+
   return (
     <div
       className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-200 overflow-hidden cursor-pointer"
@@ -72,7 +75,7 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
       <div className="relative h-48 bg-gray-100">
         {product.images[0] ? (
           <Image
-            src={product.images[0]}
+            src={productImage!}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
