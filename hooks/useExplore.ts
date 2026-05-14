@@ -48,7 +48,6 @@ export const useExplore = (productId?: string) => {
           );
         } else {
           response = await exploreService.getTopProducts(page, limit);
-          console.log(response)
         }
 
         dispatch(setProducts(response));  

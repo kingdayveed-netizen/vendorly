@@ -14,12 +14,12 @@ export const exploreService = {
     const response = await axiosInstance.get("/explore/products", { params });
     return response.data;
   },
-
+  
   getTrendingToday: async (limit?: number, category?: string): Promise<any> => {
     const params: any = {};
     if (limit) params.limit = limit;
     if (category) params.category = category;
-
+    
     const response = await axiosInstance.get("/explore/trending/today", {
       params,
     });

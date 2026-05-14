@@ -36,7 +36,7 @@ export const useProduct = () => {
         );
         return response.data;
       },
-      enabled: !!productId, // Only run if productId exists
+      enabled: !!productId, 
     });
   };
 

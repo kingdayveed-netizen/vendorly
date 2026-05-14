@@ -190,9 +190,9 @@ export const ProductQuickViewModal = ({
           </div>
         ) : product ? (
           <>
-            {/* Image Section - Reduced height on mobile/tablet */}
+            {/* Image Section  */}
             <div className="bg-gradient-to-br from-[#f9fafb] to-[#f3f4f6] p-4 md:p-6 flex-shrink-0 md:w-2/5 lg:w-2/5">
-              {/* Main Image - Smaller on mobile/tablet */}
+              {/* Main Image  */}
               <div className="relative flex items-center justify-center h-48 sm:h-56 md:h-80 lg:h-96">
                 {images.length > 0 ? (
                   <>
