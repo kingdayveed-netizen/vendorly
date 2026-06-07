@@ -10,6 +10,9 @@ export interface VendorProfile {
   verified: boolean;
   createdAt: string;
   updatedAt: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountHolderName?: string;
   
   // Stats
   totalProducts: number;
@@ -23,6 +26,9 @@ export interface UpdateProfileData {
   location?: string;
   storeName?: string;
   profileImage?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountHolderName?: string;
 }
 
 export interface ChangePasswordData {

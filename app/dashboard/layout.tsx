@@ -72,6 +72,11 @@ const navItems: NavItem[] = [
     icon: Compass,
   },
   {
+    title: "Account",
+    href: "/dashboard/account",
+    icon: Wallet,
+  },
+  {
     title: "Profile",
     href: "/dashboard/profile",
     icon: User,
