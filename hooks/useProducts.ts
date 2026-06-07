@@ -1,98 +1,127 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from '@/lib/axios';
-import { Product, CreateProductDto, UpdateProductDto } from '@/types/product';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
+import { Product, CreateProductDto, UpdateProductDto } from "@/types/product";
+import { setProducts } from "@/redux/slices/productSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "@/redux/store";
+import { toast } from "sonner";
 
-export const useProducts = (vendorId?: string) => {
-  return useQuery({
-    queryKey: ['products', vendorId],
-    queryFn: async () => {
-      const url = vendorId ? `/products?vendorId=${vendorId}` : '/products';
-      const response = await axiosInstance.get<Product[]>(url);
-      return response.data;
-    },
-  });
-};
-
-export const useProduct = (productId: string) => {
-  return useQuery({
-    queryKey: ['product', productId],
-    queryFn: async () => {
-      const response = await axiosInstance.get<Product>(`/products/${productId}`);
-      return response.data;
-    },
-    enabled: !!productId,
-  });
-};
-
-export const useCreateProduct = () => {
+export const useProduct = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: CreateProductDto) => {
-      const formData = new FormData();
-      formData.append('name', data.name);
-      formData.append('description', data.description);
-      formData.append('price', data.price.toString());
-      formData.append('quantity', data.quantity.toString());
-      data.images.forEach((image) => {
-        formData.append('images', image);
-      });
+  const { products, selectedProduct } = useSelector(
+    (state: RootState) => state.products,
+  );
 
-      const response = await axiosInstance.post<Product>('/products', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+  const vendorProducts = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const response = await axiosInstance.get<Product[]>(
+        "/products/vendor/my-products",
+      );
+      dispatch(setProducts(response.data));
+      return response.data;
+    },
+  });
+
+  const vendorProduct = (productId: string) => {
+    return useQuery({
+      queryKey: ["product", productId],
+      queryFn: async () => {
+        const response = await axiosInstance.get<Product>(
+          `/products/${productId}`,
+        );
+        return response.data;
+      },
+      enabled: !!productId, 
+    });
+  };
+
+  const useSingleProduct = (productId: string) => {
+    return useQuery({
+      queryKey: ["product", productId],
+      queryFn: async () => {
+        const response = await axiosInstance.get<Product>(
+          `/products/${productId}`,
+        );
+        return response.data;
+      },
+      enabled: !!productId,
+    });
+  };
+
+  const createProduct = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await axiosInstance.post<Product>(
+        "/products/create-product",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      });
+      );
+
+      dispatch(setProducts([response.data]));
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (error) => {
+      console.error("Error creating product:", error);
     },
   });
-};
 
-export const useUpdateProduct = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: UpdateProductDto) => {
-      const formData = new FormData();
-      if (data.name) formData.append('name', data.name);
-      if (data.description) formData.append('description', data.description);
-      if (data.price) formData.append('price', data.price.toString());
-      if (data.quantity) formData.append('quantity', data.quantity.toString());
-      if (data.images) {
-        data.images.forEach((image) => {
-          formData.append('images', image);
-        });
-      }
-
-      const response = await axiosInstance.put<Product>(`/products/${data.id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+  const updateProduct = useMutation({
+    mutationFn: async ({
+      id,
+      formData,
+    }: {
+      id: string;
+      formData: FormData;
+    }) => {
+      const response = await axiosInstance.put<Product>(
+        `/products/${id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      });
+      );
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
-};
 
-export const useDeleteProduct = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  const deleteProduct = useMutation({
     mutationFn: async (productId: string) => {
-      await axiosInstance.delete(`/products/${productId}`);
-      return productId;
+      const res = await axiosInstance.delete(`/products/${productId}`);
+      return res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: (data: any) => {
+      toast.success(data.message, { position: "top-center" });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response.data.message);
     },
   });
-};
 
+  return {
+    products,
+    selectedProduct,
+    vendorProducts,
+    vendorProduct,
+    useSingleProduct,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+  };
+};

@@ -41,7 +41,7 @@ export default function LoginForm() {
       showToast('Login successful!', 'success');
       
       // Redirect based on role
-      if (response.user.role === 'vendor') {
+      if (response.user.role === 'VENDOR') { 
         router.push('/dashboard');
       } else {
         router.push('/explore');
@@ -63,7 +63,7 @@ export default function LoginForm() {
           id="email"
           type="email"
           placeholder="Enter your email"
-          className="w-full"
+          className="w-full pr-10 bg-white text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
           {...register('email')}
         />
         {errors.email && (
@@ -80,7 +80,7 @@ export default function LoginForm() {
             id="password"
             type={showPassword ? 'text' : 'password'}
             placeholder="Enter your password"
-            className="w-full pr-10"
+            className="w-full pr-10 bg-white text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
             {...register('password')}
           />
           <button

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { useAuth } from '@/hooks/useAuth';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -18,7 +19,9 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState('');
   const { showToast } = useToast();
+  const { forgotPassword } = useAuth();
 
   const {
     register,
@@ -31,16 +34,19 @@ export default function ForgotPasswordForm() {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       setIsLoading(true);
-      // TODO: Implement forgot password API call
-      // await forgotPassword(data.email);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the actual forgotPassword API
+      const result = await forgotPassword(data.email);
       
-      setIsSubmitted(true);
-      showToast('Password reset link sent to your email!', 'success');
+      if (result.success) {
+        setSubmittedEmail(data.email);
+        setIsSubmitted(true);
+        showToast(result.message, 'success');
+      } else {
+        showToast(result.message, 'error');
+      }
     } catch (error: any) {
-      showToast(error.response?.data?.message || 'Failed to send reset link', 'error');
+      showToast(error.response?.data?.message || 'Failed to send reset link', 'error'); 
     } finally {
       setIsLoading(false);
     }
@@ -51,10 +57,11 @@ export default function ForgotPasswordForm() {
       <div className="text-center space-y-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-6">
           <p className="text-gray-800 mb-2">
-            We've sent a password reset link to your email address.
+            We've sent a password reset link to <strong>{submittedEmail}</strong>
           </p>
           <p className="text-sm text-gray-600">
             Please check your inbox and follow the instructions to reset your password.
+            The link will expire in 30 minutes.
           </p>
         </div>
         <Link href="/login">
@@ -101,4 +108,3 @@ export default function ForgotPasswordForm() {
     </form>
   );
 }
-

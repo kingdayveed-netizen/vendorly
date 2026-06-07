@@ -4,12 +4,23 @@ export interface Product {
   description: string;
   price: number;
   quantity: number;
-  images: string[];
+  images: {
+    url: string;
+  }[];
   vendorId: string;
+  category: {
+    productId: string;
+    categoryId: string;
+    category: {
+      name: string;
+    };
+  }[];
+  tags: string[];
   vendor?: {
     id: string;
     storeName: string;
     fullName: string;
+    storeSlug: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -20,10 +31,9 @@ export interface CreateProductDto {
   description: string;
   price: number;
   quantity: number;
-  images: File[];
+  category: string;
 }
 
 export interface UpdateProductDto extends Partial<CreateProductDto> {
   id: string;
 }
-

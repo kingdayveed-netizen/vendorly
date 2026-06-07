@@ -2,7 +2,7 @@ import { User } from './user';
 import { Product } from './product';
 
 export interface Vendor extends User {
-  role: 'vendor';
+  role: 'VENDOR';
   storeName: string;
   phoneNumber: string;
   products?: Product[];

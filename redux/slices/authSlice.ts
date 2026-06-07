@@ -1,43 +1,57 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { User } from '@/types/user';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { User } from "@/types/user";
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  initialized: boolean; 
 }
 
 const initialState: AuthState = {
-  user: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null,
-  token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
-  isAuthenticated: typeof window !== 'undefined' ? !!localStorage.getItem('token') : false,
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
+  initialized: false,
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
-    setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
+    setCredentials: (state, action: PayloadAction<{ user: User }>) => {
       state.user = action.payload.user;
-      state.token = action.payload.token;
       state.isAuthenticated = true;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
-        localStorage.setItem('token', action.payload.token);
+      state.isLoading = false;
+      state.initialized = true;
+    },
+    updateUser: (state, action: PayloadAction<Partial<User>>) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
       }
     },
     logout: (state) => {
       state.user = null;
-      state.token = null;
       state.isAuthenticated = false;
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
+      state.isLoading = false;
+      state.initialized = true;
+    },
+    setAuthLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
+    },
+    setInitialized: (state) => {
+      state.initialized = true;
+      state.isLoading = false;
     },
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
-export default authSlice.reducer;
+export const {
+  setCredentials,
+  logout,
+  updateUser,
+  setAuthLoading,
+  setInitialized,
+} = authSlice.actions;
 
+export default authSlice.reducer;
