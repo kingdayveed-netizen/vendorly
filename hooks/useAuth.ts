@@ -9,7 +9,11 @@ import {
 } from "@/redux/slices/authSlice";
 import { User } from "@/types/user";
 import axiosInstance from "@/lib/axios";
-import { getRefreshToken } from "@/lib/authTokens";
+import {
+  clearAuthTokens,
+  getRefreshToken,
+  storeAuthTokens,
+} from "@/lib/authTokens";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
@@ -82,6 +86,9 @@ export const useAuth = () => {
       email,
       password,
     });
+
+    console.log("Login response:", response.data); // 👈 temporary debug log
+    storeAuthTokens(response.data.token);
     dispatch(setCredentials({ user: response.data.user }));
     return response.data;
   };
@@ -103,6 +110,7 @@ export const useAuth = () => {
       "/auth/register",
       payload,
     );
+    storeAuthTokens(response.data.token);
     dispatch(setCredentials({ user: response.data.user }));
     return response.data;
   };
@@ -116,6 +124,8 @@ export const useAuth = () => {
       const response = await axiosInstance.get(
         `/auth/verify-email?token=${token}`,
       );
+      console.log(response);
+
       setVerificationStatus({ loading: false, error: null, success: true });
       return { success: true, message: response.data.message };
     } catch (error: any) {
@@ -185,9 +195,11 @@ export const useAuth = () => {
   const handleLogout = async () => {
     try {
       await axiosInstance.post("/auth/logout");
+      clearAuthTokens();
       dispatch(logout());
     } catch (error) {
       console.error("Logout error:", error);
+      clearAuthTokens();
       dispatch(logout());
     }
   };
@@ -199,6 +211,7 @@ export const useAuth = () => {
         "/auth/refresh",
         refreshToken ? { refreshToken } : undefined,
       );
+      storeAuthTokens(response.data.token);
       dispatch(setCredentials({ user: response.data.user }));
       return true;
     } catch (error) {
