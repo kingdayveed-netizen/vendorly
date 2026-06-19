@@ -15,7 +15,6 @@ import { StoreTab } from "@/components/profile/tabs/StoreTabs";
 import { Modal } from "@/components/ui/Modal";
 import { User } from "lucide-react";
 
-// Helper function to get full image URL
 const getImageUrl = (path: string | undefined) => {
   if (!path) return undefined;
   if (path.startsWith("http")) return path;
@@ -49,7 +48,6 @@ export default function ProfilePage() {
     confirmPassword: "",
   });
 
-  // Memoized functions
   const getInitials = useCallback((name: string) => {
     return name
       .split(" ")
@@ -63,7 +61,6 @@ export default function ProfilePage() {
     return `₦${amount.toLocaleString()}`;
   }, []);
 
-  // Handlers
   const handleEdit = useCallback(() => {
     if (!profile) return;
     setFormData({
@@ -75,8 +72,12 @@ export default function ProfilePage() {
     setIsEditing(true);
   }, [profile]);
 
+  // ✅ Fix 3 — only send fields with values
   const handleSave = async () => {
-    await updateVendorProfile(formData);
+    const cleanedData = Object.fromEntries(
+      Object.entries(formData).filter(([_, value]) => value.trim() !== "")
+    );
+    await updateVendorProfile(cleanedData);
     setIsEditing(false);
   };
 
@@ -104,18 +105,23 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePasswordSubmit = useCallback(async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Passwords don't match");
-      return;
-    }
-    await changePassword(passwordData);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-  }, [passwordData, changePassword]);
+  // ✅ Fix 2 — strip confirmPassword before sending
+ const handlePasswordSubmit = useCallback(async () => {
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    alert("Passwords don't match");
+    return;
+  }
+  await changePassword({
+    currentPassword: passwordData.currentPassword,
+    newPassword: passwordData.newPassword,
+    confirmPassword: passwordData.confirmPassword, // 👈 add this back
+  });
+  setPasswordData({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+}, [passwordData, changePassword]);
 
   if (isLoading) {
     return <ProfileSkeleton />;
@@ -148,88 +154,98 @@ export default function ProfilePage() {
           onEdit={handleEdit}
         />
 
-<Modal
-  isOpen={isEditing}
-  onClose={handleCancel}
-  title="Edit profile"
-  subtitle="Update your account details"
->
-  <div className="flex flex-col gap-4">
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">
-        Full name
-      </label>
-      <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
-        <input
-          type="text"
-          value={formData.fullName}
-          onChange={(e) => handleFormChange("fullName", e.target.value)}
-          className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
-        />
-      </div>
-    </div>
+        <Modal
+          isOpen={isEditing}
+          onClose={handleCancel}
+          title="Edit profile"
+          subtitle="Update your account details"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                Full name
+              </label>
+              <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
+                <input
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => handleFormChange("fullName", e.target.value)}
+                  className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
+                />
+              </div>
+            </div>
 
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">
-        Store name
-      </label>
-      <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
-        <input
-          type="text"
-          value={formData.storeName}
-          onChange={(e) => handleFormChange("storeName", e.target.value)}
-          className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
-        />
-      </div>
-    </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                Store name
+              </label>
+              <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
+                <input
+                  type="text"
+                  value={formData.storeName}
+                  onChange={(e) =>
+                    handleFormChange("storeName", e.target.value)
+                  }
+                  className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
+                />
+              </div>
+            </div>
 
-    <div className="grid grid-cols-2 gap-3">
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1.5">
-          Phone
-        </label>
-        <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
-          <input
-            type="text"
-            value={formData.phone}
-            onChange={(e) => handleFormChange("phone", e.target.value)}
-            className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1.5">
-          Location
-        </label>
-        <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
-          <input
-            type="text"
-            value={formData.location}
-            onChange={(e) => handleFormChange("location", e.target.value)}
-            className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Phone
+                </label>
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      handleFormChange("phone", e.target.value)
+                    }
+                    className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Location
+                </label>
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3.5 py-2.5">
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) =>
+                      handleFormChange("location", e.target.value)
+                    }
+                    className="w-full bg-transparent border-none text-gray-800 text-sm placeholder:text-gray-400 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-  <div className="flex gap-3 mt-8">
-    <button
-      onClick={handleCancel}
-      className="flex-1 py-3 rounded-xl font-medium text-gray-700 transition-transform hover:scale-[1.02] active:scale-[0.98]"
-      style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)" }}
-    >
-      Cancel
-    </button>
-    <button
-      onClick={handleSave}
-      disabled={isUpdating}
-      className="flex-1 py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-    >
-      {isUpdating ? "Saving..." : "Save changes"}
-    </button>
-  </div>
-</Modal>
+          <div className="flex gap-3 mt-8">
+            <button
+              onClick={handleCancel}
+              className="flex-1 py-3 rounded-xl font-medium text-gray-700 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                background: "rgba(0,0,0,0.04)",
+                border: "1px solid rgba(0,0,0,0.1)",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isUpdating}
+              className="flex-1 py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+            >
+              {isUpdating ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </Modal>
+
         {/* Profile Overview Card */}
         <Card className="mb-8 overflow-hidden">
           <div className="h-24 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent" />
