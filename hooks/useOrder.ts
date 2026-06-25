@@ -59,6 +59,7 @@ export const useOrder = () => {
       dispatch(
         setOrders({ orders: response.orders, pagination: response.pagination }),
       );
+      console.log(response)
       return response;
     },
   });

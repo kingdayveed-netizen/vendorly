@@ -62,7 +62,7 @@ export const FavoriteButton = ({
     try {
       await toggle(productId);
     } catch (error) {
-      showToast("Failed to update favorites", "error");
+      showToast("Failed to update favoritess", "error");
     } finally {
       setOptimistic(false);
     }

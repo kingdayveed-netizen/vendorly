@@ -36,7 +36,7 @@ export const useProduct = () => {
         );
         return response.data;
       },
-      enabled: !!productId, 
+      enabled: !!productId,
     });
   };
 
@@ -54,17 +54,18 @@ export const useProduct = () => {
   };
 
   const createProduct = useMutation({
-    mutationFn: async (formData: FormData) => {
+    mutationFn: async (data: {
+      name: string;
+      description: string;
+      price: number;
+      quantity: number;
+      category: string[];
+      images: string[];
+    }) => {
       const response = await axiosInstance.post<Product>(
         "/products/create-product",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
+        data,
       );
-
       dispatch(setProducts([response.data]));
       return response.data;
     },

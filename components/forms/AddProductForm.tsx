@@ -17,6 +17,41 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
+import axiosInstance from "@/lib/axios";
+
+const getUploadSignature = async () => {
+  const response = await axiosInstance.get(
+    "/cloudinary/upload-signature?folder=vendorly/products",
+  );
+  return response.data;
+};
+
+const uploadFileToCloudinary = async (
+  file: File,
+  signature: {
+    signature: string;
+    timestamp: number;
+    cloudName: string;
+    apiKey: string;
+    folder: string;
+  },
+): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("signature", signature.signature);
+  formData.append("timestamp", signature.timestamp.toString());
+  formData.append("api_key", signature.apiKey);
+  formData.append("folder", signature.folder);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`,
+    { method: "POST", body: formData },
+  );
+
+  if (!response.ok) throw new Error("Failed to upload image");
+  const data = await response.json();
+  return data.secure_url as string;
+};
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -31,7 +66,6 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-// Predefined categories
 const categories = [
   { value: "Clothing", label: "👕 Clothing" },
   { value: "Electronics", label: "📱 Electronics" },
@@ -82,7 +116,6 @@ export default function AddProductForm() {
 
   const selectedCategories = watch("category") || [];
 
-  // Clean up previews when component unmounts
   useEffect(() => {
     return () => {
       imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
@@ -93,27 +126,36 @@ export default function AddProductForm() {
     const files = e.target.files;
     if (files) {
       const fileArray = Array.from(files);
-      setSelectedFiles(fileArray);
-      setValue("images", fileArray);
+
+      // ✅ Check total after adding new files
+      const totalImages = selectedFiles.length + fileArray.length;
+      if (totalImages > 5) {
+        showToast("You can only upload a maximum of 5 images", "error");
+        e.target.value = ""; // reset the input
+        return;
+      }
+
+      // ✅ Merge with existing selected files instead of replacing them
+      const mergedFiles = [...selectedFiles, ...fileArray];
+      setSelectedFiles(mergedFiles);
+      setValue("images", mergedFiles);
 
       // Clean up old previews
       imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
 
-      // Create new previews
-      const previews = fileArray.map((file) => URL.createObjectURL(file));
+      // Create new previews for all files
+      const previews = mergedFiles.map((file) => URL.createObjectURL(file));
       setImagePreviews(previews);
     }
   };
 
   const removeImage = (indexToRemove: number) => {
-    // Remove from selected files
     const newFiles = selectedFiles.filter(
       (_, index) => index !== indexToRemove,
     );
     setSelectedFiles(newFiles);
     setValue("images", newFiles);
 
-    // Remove preview and clean up URL
     URL.revokeObjectURL(imagePreviews[indexToRemove]);
     const newPreviews = imagePreviews.filter(
       (_, index) => index !== indexToRemove,
@@ -125,13 +167,11 @@ export default function AddProductForm() {
     const currentCategories = [...selectedCategories];
 
     if (currentCategories.includes(categoryValue)) {
-      // Remove category
       const newCategories = currentCategories.filter(
         (c) => c !== categoryValue,
       );
       setValue("category", newCategories);
     } else {
-      // Add category - check limit
       if (currentCategories.length >= MAX_CATEGORIES) {
         showToast(
           `You can only select up to ${MAX_CATEGORIES} categories`,
@@ -152,27 +192,23 @@ export default function AddProductForm() {
     try {
       setIsLoading(true);
 
-      // Create FormData and append all fields
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("description", data.description);
-      formData.append("price", data.price.toString());
-      formData.append("quantity", data.quantity.toString());
-      // Send categories as a JSON string (backend should parse)
-      formData.append("category", JSON.stringify(data.category));
+      const signature = await getUploadSignature();
 
-      // Append each image file
-      selectedFiles.forEach((file) => {
-        formData.append("images", file);
+      const imageUrls = await Promise.all(
+        selectedFiles.map((file) => uploadFileToCloudinary(file, signature)),
+      );
+
+      await createProduct.mutateAsync({
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        quantity: data.quantity,
+        category: data.category,
+        images: imageUrls,
       });
-
-      // Send everything in one request to your backend
-      await createProduct.mutateAsync(formData);
 
       showToast("Product added successfully!", "success");
       router.push("/dashboard");
-
-      // Clean up previews after successful submission
       imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
     } catch (error: any) {
       console.error("Submission error:", error);
@@ -185,7 +221,6 @@ export default function AddProductForm() {
     }
   };
 
-  // Get display label for selected categories
   const getSelectedCategoriesDisplay = () => {
     if (selectedCategories.length === 0) return "Select categories";
     const selectedLabels = selectedCategories.map(
@@ -309,7 +344,6 @@ export default function AddProductForm() {
               </span>
             </label>
 
-            {/* Selected Categories Tags */}
             {selectedCategories.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {selectedCategories.map((cat) => {
