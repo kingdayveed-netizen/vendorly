@@ -60,6 +60,12 @@ const StatusBadge = ({ status }: { status: Order["status"] }) => {
       icon: Clock,
       label: "Pending",
     },
+    PAID: {
+      bg: "bg-blue-50",
+      text: "text-blue-700",
+      icon: CreditCard,
+      label: "Paid",
+    },
     CANCELLED: {
       bg: "bg-rose-50",
       text: "text-rose-700",

@@ -41,7 +41,6 @@ export const useAuth = () => {
     success: false,
   });
 
-  // Define auth pages where we don't want to check auth
   const authPages = [
     "/login",
     "/signup",
@@ -54,7 +53,6 @@ export const useAuth = () => {
 
   const isAuthPage = authPages.includes(pathname);
 
-  // Check authentication status on mount, but skip on auth pages
   useEffect(() => {
     if (isAuthPage) {
       dispatch(setAuthLoading(false));
@@ -89,6 +87,7 @@ export const useAuth = () => {
       password,
     });
 
+    console.log("Login response:", response.data); // 👈 temporary debug log
     storeAuthTokens(response.data.token);
     dispatch(setCredentials({ user: response.data.user }));
     return response.data;

@@ -101,6 +101,7 @@ export default function RootLayout({
     `/dashboard/customers/${pathName.split("/")[3]}`,
     "/dashboard/finances",
     "/dashboard/profile",
+    "/dashboard/account",
     "/dashboard/notifications",
   ];
 

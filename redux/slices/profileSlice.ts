@@ -28,9 +28,14 @@ const profileSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
-    setProfile: (state, action: PayloadAction<VendorProfile | null>) => {
-      state.profile = action.payload;
-    },
+   setProfile: (state, action: PayloadAction<VendorProfile | null>) => {
+  if (action.payload && state.profile) {
+    // merge with existing to preserve any fields backend doesn't return
+    state.profile = { ...state.profile, ...action.payload };
+  } else {
+    state.profile = action.payload;
+  }
+},
     updateProfile: (state, action: PayloadAction<Partial<VendorProfile>>) => {
       if (state.profile) {
         state.profile = { ...state.profile, ...action.payload };

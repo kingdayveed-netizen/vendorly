@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Button  from "@/components/ui/Button";
+import Button from "@/components/ui/Button";
 import { Badge } from "@/components/ui/badge";
 import {
   Package,
@@ -69,6 +69,12 @@ const StatusBadge = ({ status }: { status: Order["status"] }) => {
       icon: Clock,
       label: "Pending",
     },
+      PAID: {
+      bg: "bg-blue-50",
+      text: "text-blue-700",
+      icon: CreditCard,  
+      label: "Paid",
+    },
     CANCELLED: {
       bg: "bg-rose-50",
       text: "text-rose-700",
@@ -79,10 +85,24 @@ const StatusBadge = ({ status }: { status: Order["status"] }) => {
 
   const config = statusConfig[status];
 
+  // if (!config) {
+  //   return (
+  //     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50">
+  //       <span className="text-sm font-medium text-gray-700">
+  //         {status || "Unknown"}
+  //       </span>
+  //     </div>
+  //   );
+  // }
+
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${config.bg}`}>
+    <div
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${config.bg}`}
+    >
       <config.icon className={`w-4 h-4 ${config.text}`} />
-      <span className={`text-sm font-medium ${config.text}`}>{config.label}</span>
+      <span className={`text-sm font-medium ${config.text}`}>
+        {config.label}
+      </span>
     </div>
   );
 };
@@ -104,8 +124,12 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   const productName = product?.name || "Unknown Product";
   const productImage = product?.images?.[0];
   const quantity = order.finalQuantity || order.orderItems?.[0]?.quantity || 1;
-  const pricePerUnit = order.finalPricePerUnit || order.orderItems?.[0]?.price || product?.price || 0;
-  const totalAmount = order.totalAmount || (quantity * pricePerUnit);
+  const pricePerUnit =
+    order.finalPricePerUnit ||
+    order.orderItems?.[0]?.price ||
+    product?.price ||
+    0;
+  const totalAmount = order.totalAmount || quantity * pricePerUnit;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -162,7 +186,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Unit Price:</span>
-                    <span className="ml-2 font-medium">{formatCurrency(pricePerUnit)}</span>
+                    <span className="ml-2 font-medium">
+                      {formatCurrency(pricePerUnit)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -178,7 +204,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
               <div>
                 <p className="text-xs text-muted-foreground">Name</p>
-                <p className="font-medium">{order.customerName || "Anonymous"}</p>
+                <p className="font-medium">
+                  {order.customerName || "Anonymous"}
+                </p>
               </div>
               {order.customerPhone && (
                 <div>
@@ -214,7 +242,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               </div>
               {order.completedAt && (
                 <div className="col-span-2">
-                  <p className="text-xs text-muted-foreground">Completed Date</p>
+                  <p className="text-xs text-muted-foreground">
+                    Completed Date
+                  </p>
                   <p className="text-sm flex items-center gap-1">
                     <CheckCircle className="w-3 h-3 text-emerald-600" />
                     {formatDate(order.completedAt)}
@@ -244,10 +274,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t">
-            <Button
-              onClick={handleViewFullDetails}
-              className="flex-1"
-            >
+            <Button onClick={handleViewFullDetails} className="flex-1">
               <ExternalLink className="w-4 h-4 mr-2" />
               View Full Details
             </Button>

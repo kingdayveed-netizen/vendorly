@@ -19,12 +19,18 @@ export const profileService = {
   },
 
   // Change password
-  changePassword: async (
-    data: ChangePasswordData,
-  ): Promise<{ message: string }> => {
+changePassword: async (
+  data: ChangePasswordData,
+): Promise<{ message: string }> => {
+  console.log("Change password payload:", data); // 👈 see what we're sending
+  try {
     const response = await axiosInstance.post("/profile/change-password", data);
     return response.data;
-  },
+  } catch (error: any) {
+    console.log("Change password error:", error.response?.data); // 👈 see backend error
+    throw error;
+  }
+},
 
   // Upload profile image
   uploadProfileImage: async (file: File): Promise<{ profileImage: string }> => {

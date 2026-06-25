@@ -4,13 +4,14 @@ import { AppDispatch, RootState } from "@/redux/store";
 import { profileService } from "@/app/services/profile.service";
 import {
   setLoading,
+  
   setUpdating,
   setError,
   setProfile,
   updateProfile,
   clearProfile,
 } from "@/redux/slices/profileSlice";
-import { UpdateProfileData, ChangePasswordData } from "@/types/profile";
+import { UpdateProfileData, ChangePasswordData, VendorProfile} from "@/types/profile";
 import { toast } from "sonner";
 
 export const useProfile = () => {
@@ -36,25 +37,26 @@ export const useProfile = () => {
     }
   };
 
-  // Update profile
   const updateVendorProfile = async (data: UpdateProfileData) => {
-    try {
-      dispatch(setUpdating(true));
-      dispatch(setError(null));
-      const updatedProfile = await profileService.updateProfile(data);
-      dispatch(setProfile(updatedProfile));
-      toast.success("Profile updated successfully");
-      return updatedProfile;
-    } catch (error: any) {
-      const message =
-        error.response?.data?.message || "Failed to update profile";
-      dispatch(setError(message));
-      toast.error(message);
-      throw error;
-    } finally {
-      dispatch(setUpdating(false));
-    }
-  };
+  try {
+    dispatch(setUpdating(true));
+    dispatch(setError(null));
+    const updatedProfile = await profileService.updateProfile(data);
+    
+    // dispatch ONLY the fresh data from backend — no spreading stale state
+    dispatch(setProfile(updatedProfile));
+    
+    toast.success("Profile updated successfully");
+    return updatedProfile;
+  } catch (error: any) {
+    const message = error.response?.data?.message || "Failed to update profile";
+    dispatch(setError(message));
+    toast.error(message);
+    throw error;
+  } finally {
+    dispatch(setUpdating(false));
+  }
+};
 
   // Change password
   const changePassword = async (data: ChangePasswordData) => {
