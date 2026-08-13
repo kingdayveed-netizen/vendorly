@@ -122,11 +122,19 @@ axiosInstance.interceptors.response.use(
           "/forgot-password",
           "/reset-password",
           "/verify-email",
+          "/verifyEmail",
+          "/explore",
         ];
+
+        const isStorefrontPage =
+          typeof window !== "undefined" &&
+          window.location.pathname.split("/").filter(Boolean).length === 1 &&
+          !publicPages.includes(window.location.pathname);
 
         if (
           typeof window !== "undefined" &&
-          !publicPages.includes(window.location.pathname)
+          !publicPages.includes(window.location.pathname) &&
+          !isStorefrontPage
         ) {
           window.location.href = "/login";
         }
