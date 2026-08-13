@@ -53,6 +53,18 @@ export const useStore = (storeSlug?: string): UseStoreReturn => {
     (state: RootState) => state.store,
   );
 
+  const getStoreErrorMessage = (error: any) => {
+    if (error?.response?.status === 404) {
+      return "This store may have been removed, renamed, or the link may be incorrect.";
+    }
+
+    return (
+      error?.response?.data?.message ||
+      error?.message ||
+      "Failed to load store"
+    );
+  };
+
   // Use proper React Query for automatic fetching when slug is provided
   const {
     data: storeData,
@@ -68,7 +80,8 @@ export const useStore = (storeSlug?: string): UseStoreReturn => {
     enabled: !!storeSlug, // Only run if storeSlug is provided
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes cache
-    retry: 1, // Only retry once on failure
+    retry: (failureCount, error: any) =>
+      error?.response?.status !== 404 && failureCount < 1,
   });
 
   // Update Redux when data changes
@@ -81,12 +94,13 @@ export const useStore = (storeSlug?: string): UseStoreReturn => {
   // Handle errors
   useEffect(() => {
     if (queryError) {
-      const errorMessage =
-        (queryError as any)?.response?.data?.message ||
-        (queryError as Error)?.message ||
-        "Failed to load store";
+      const errorMessage = getStoreErrorMessage(queryError);
       dispatch(setError(errorMessage));
-      showToast(errorMessage, "error");
+      dispatch(clearStore());
+
+      if ((queryError as any)?.response?.status !== 404) {
+        showToast(errorMessage, "error");
+      }
     }
   }, [queryError, dispatch, showToast]);
 
@@ -121,11 +135,14 @@ export const useStore = (storeSlug?: string): UseStoreReturn => {
       dispatch(setStore(data));
       return data;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to load store";
+      const errorMessage = getStoreErrorMessage(error);
 
       dispatch(setError(errorMessage));
-      showToast(errorMessage, "error");
+      dispatch(clearStore());
+
+      if (error?.response?.status !== 404) {
+        showToast(errorMessage, "error");
+      }
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -261,7 +278,7 @@ export const useStore = (storeSlug?: string): UseStoreReturn => {
     // State - use React Query states for loading/error
     currentStore,
     loading: isLoading,
-    error: queryError ? (queryError as Error).message : null,
+    error: queryError ? getStoreErrorMessage(queryError) : null,
     selectedProduct,
 
     // Store actions

@@ -12,7 +12,11 @@ interface ProductGridProps {
   onProductClick?: (product: StoreProduct) => void;
 }
 
-export default function ProductGrid({ products, storeSlug }: ProductGridProps) {
+export default function ProductGrid({
+  products,
+  storeSlug,
+  onProductClick,
+}: ProductGridProps) {
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
 
   if (products.length === 0) {
@@ -32,15 +36,16 @@ export default function ProductGrid({ products, storeSlug }: ProductGridProps) {
           <ProductCard
             key={product.id}
             product={product}
-            onClick={() => setSelectedProduct(product)}
+            onClick={() =>
+              onProductClick ? onProductClick(product) : setSelectedProduct(product)
+            }
           />
         ))}
       </div>
 
-      {selectedProduct && (
+      {!onProductClick && selectedProduct && (
         <ProductModal
           product={selectedProduct}
-          storeSlug={storeSlug!}
           onClose={() => setSelectedProduct(null)}
         />
       )}

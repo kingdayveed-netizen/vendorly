@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useStore } from "@/hooks/useStore";
 import ProductGrid from "@/components/storefront/ProductGrid";
 import ProductModal from "@/components/storefront/ProductModal";
+import VendorlyLogoLink from "@/components/layout/VendorlyLogoLink";
+import { buildWhatsAppUrl, formatWhatsAppPhone } from "@/lib/whatsapp";
 
 import {
   Loader2,
@@ -19,8 +22,51 @@ import {
   MapPin,
   Calendar,
   CheckCircle2,
+  Home,
+  Search,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+
+const StoreNotFound = ({ message }: { message?: string | null }) => (
+  <div className="min-h-screen bg-gradient-to-b from-[#f9fafb] via-white to-[#f9fafb]">
+    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-8 sm:px-6 lg:px-8">
+      <VendorlyLogoLink />
+
+      <div className="flex flex-1 items-center justify-center py-16">
+        <div className="w-full max-w-lg text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+            <ShoppingBag className="h-10 w-10" />
+          </div>
+
+          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+            Store not found
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-500 sm:text-base">
+            {message ||
+              "This store may have been removed, renamed, or the link may be incorrect."}
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/explore"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#10b981] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-[#059669]"
+            >
+              <Search className="h-4 w-4" />
+              Explore Marketplace
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-emerald-200 hover:text-emerald-700"
+            >
+              <Home className="h-4 w-4" />
+              Go Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export default function StorePage() {
   const params = useParams();
@@ -33,16 +79,8 @@ export default function StorePage() {
     loading,
     error,
     selectedProduct,
-    getStoreBySlug,
     selectProduct,
-    createWhatsAppOrder,
-  } = useStore();
-
-  useEffect(() => {
-    if (storeSlug) {
-      getStoreBySlug(storeSlug);
-    }
-  }, [storeSlug, getStoreBySlug]);
+  } = useStore(storeSlug);
 
   const handleShare = async () => {
     try {
@@ -53,17 +91,7 @@ export default function StorePage() {
   };
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
-            <ShoppingBag className="h-8 w-8 text-red-400" />
-          </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Store not found</h1>
-          <p className="text-gray-400 text-sm leading-relaxed">{error}</p>
-        </div>
-      </div>
-    );
+    return <StoreNotFound message={error} />;
   }
 
   if (loading || !currentStore) {
@@ -107,11 +135,15 @@ export default function StorePage() {
     : currentStore.products;
 
   // ✅ Fixed — falls back to vendorPhone from first product if user.phone is missing
-  const whatsappNumber = (
+  const whatsappNumber = formatWhatsAppPhone(
     currentStore.user?.phone ||
     currentStore.products?.[0]?.vendorPhone ||
-    ""
-  ).replace(/\D/g, "");
+      "",
+  );
+  const chatVendorUrl = buildWhatsAppUrl(
+    whatsappNumber,
+    "Hello, I found your store on Vendorly and I need some help.",
+  );
 
   return (
     <div className="min-h-screen bg-[#F7F8FA]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -171,9 +203,9 @@ export default function StorePage() {
                 )}
               </div>
 
-              {whatsappNumber && (
+              {chatVendorUrl && (
                 
-                 <a href={`https://wa.me/${whatsappNumber}`}
+                 <a href={chatVendorUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 shadow-sm"
@@ -344,12 +376,7 @@ export default function StorePage() {
       {selectedProduct && (
         <ProductModal
           product={selectedProduct}
-          storeSlug={storeSlug}
           onClose={() => selectProduct(null)}
-          onWhatsAppOrder={() => {
-            const url = createWhatsAppOrder(selectedProduct);
-            window.open(url, "_blank");
-          }}
         />
       )}
     </div>

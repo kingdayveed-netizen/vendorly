@@ -2,57 +2,55 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { StoreProduct } from "@/redux/slices/storeSlice";
+import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import {
   X,
-  MessageCircle,
+  ShoppingCart,
   ChevronLeft,
   ChevronRight,
-  Heart,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { StoreProduct } from "@/redux/slices/storeSlice";
+import { RootState } from "@/redux/store";
+import { useAddToCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 interface ProductModalProps {
   product: StoreProduct;
-  storeSlug: string;
   onClose: () => void;
-  onWhatsAppOrder?: (product: StoreProduct) => void;
 }
 
 export default function ProductModal({
   product,
-  storeSlug,
   onClose,
 }: ProductModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const router = useRouter();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { addToCart, isAdding } = useAddToCart();
 
-  const handleWhatsAppOrder = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleAddToCart = async (event: React.MouseEvent) => {
+    event.stopPropagation();
 
-    if (!product.vendorPhone) return;
+    if (product.quantity === 0 || isAdding) return;
 
-    const formatToInternational = (phone: string) => {
-      let cleaned = phone.replace(/[^\d]/g, "");
+    if (!isAuthenticated) {
+      toast.error("Please sign in to add items to your cart");
+      router.push("/login");
+      return;
+    }
 
-      // If number starts with 0, replace with 234
-      if (cleaned.startsWith("0")) {
-        cleaned = "234" + cleaned.slice(1);
-      }
-
-      return cleaned;
-    };
-
-    const phoneNumber = formatToInternational(product.vendorPhone);
-
-    const message = `Hello, I'm interested in ordering: Product: ${product.name} Price: ₦${product.price.toLocaleString()}. Please let me know how to proceed with the order.`;
-
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    // const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
-
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    try {
+      await addToCart({
+        productId: product.id,
+        quantity: 1,
+      });
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    }
   };
 
-  
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
   };
@@ -64,19 +62,17 @@ export default function ProductModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="relative bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
-        {/* Close button */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative max-h-[90vh] w-full max-w-4xl overflow-auto rounded-xl bg-white">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+          className="absolute right-4 top-4 z-10 rounded-full bg-white p-2 shadow-lg hover:bg-gray-100"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="grid md:grid-cols-2">
-          {/* Image gallery */}
-          <div className="relative h-96 md:h-full bg-gray-100">
+          <div className="relative h-96 bg-gray-100 md:h-full">
             {product.images.length > 0 ? (
               <>
                 <Image
@@ -90,27 +86,26 @@ export default function ProductModal({
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white p-2 shadow-lg hover:bg-gray-100"
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white p-2 shadow-lg hover:bg-gray-100"
                     >
                       <ChevronRight className="h-5 w-5" />
                     </button>
                   </>
                 )}
 
-                {/* Image indicators */}
                 {product.images.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
                     {product.images.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentImageIndex(index)}
-                        className={`w-2 h-2 rounded-full transition-colors ${
+                        className={`h-2 w-2 rounded-full transition-colors ${
                           index === currentImageIndex
                             ? "bg-green-500"
                             : "bg-gray-300"
@@ -121,48 +116,47 @@ export default function ProductModal({
                 )}
               </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="flex h-full w-full items-center justify-center">
                 <span className="text-gray-400">No image available</span>
               </div>
             )}
           </div>
 
-          {/* Product details */}
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            <h2 className="mb-2 text-2xl font-bold text-gray-800">
               {product.name}
             </h2>
 
-            <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2">
               <span className="text-3xl font-bold text-green-600">
-                ₦{product.price.toLocaleString()}
+                NGN {product.price.toLocaleString()}
               </span>
               {product.quantity > 0 ? (
-                <span className="px-2 py-1 bg-green-100 text-green-600 text-sm rounded-full">
+                <span className="rounded-full bg-green-100 px-2 py-1 text-sm text-green-600">
                   In Stock ({product.quantity})
                 </span>
               ) : (
-                <span className="px-2 py-1 bg-red-100 text-red-600 text-sm rounded-full">
+                <span className="rounded-full bg-red-100 px-2 py-1 text-sm text-red-600">
                   Out of Stock
                 </span>
               )}
             </div>
 
             <div className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-2">Description</h3>
-              <p className="text-gray-600 whitespace-pre-line">
+              <h3 className="mb-2 font-semibold text-gray-700">Description</h3>
+              <p className="whitespace-pre-line text-gray-600">
                 {product.description}
               </p>
             </div>
 
             {product.tags.length > 0 && (
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-700 mb-2">Tags</h3>
+                <h3 className="mb-2 font-semibold text-gray-700">Tags</h3>
                 <div className="flex flex-wrap gap-2">
                   {product.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
+                      className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600"
                     >
                       {tag}
                     </span>
@@ -172,16 +166,16 @@ export default function ProductModal({
             )}
 
             <Button
-              onClick={handleWhatsAppOrder}
-              disabled={product.quantity === 0}
-              className="w-full bg-green-500 hover:bg-green-600 text-white py-3 text-lg"
+              onClick={handleAddToCart}
+              disabled={product.quantity === 0 || isAdding}
+              className="w-full bg-green-500 py-3 text-lg text-white hover:bg-green-600"
             >
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Order via WhatsApp
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              {isAdding ? "Adding to cart..." : "Add to cart"}
             </Button>
 
-            <p className="text-xs text-gray-500 text-center mt-4">
-              You'll be redirected to WhatsApp to complete your order
+            <p className="mt-4 text-center text-xs text-gray-500">
+              Sign in to add this item to your cart and complete checkout.
             </p>
           </div>
         </div>
