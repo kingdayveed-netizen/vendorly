@@ -1,6 +1,6 @@
 "use client";
 
-import { useGetCart } from "@/hooks/useCart";
+import { useGetCart, useRemoveCartItem } from "@/hooks/useCart";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import Image from "next/image";
@@ -16,15 +16,35 @@ import {
   Package,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { useState, useEffect } from "react";
 
 export default function Cart() {
   const router = useRouter();
   const { data: cart, isLoading, error } = useGetCart();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-  const [removingItem, setRemovingItem] = useState<string | null>(null);
+  const { removeCartItem } = useRemoveCartItem();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
   const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+
+  const handleRemoveItem = async (itemId: string) => {
+    setRemovingItems((current) => {
+      const next = new Set(current);
+      next.add(itemId);
+      return next;
+    });
+
+    try {
+      await removeCartItem(itemId);
+    } catch {
+      // Error messaging and recovery are handled in useRemoveCartItem.
+    } finally {
+      setRemovingItems((current) => {
+        const next = new Set(current);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  };
 
   // Wait for auth state to be hydrated
   useEffect(() => {
@@ -327,16 +347,12 @@ export default function Cart() {
 
                       {/* Remove Button */}
                       <button
-                        onClick={() => {
-                          setRemovingItem(item.id);
-                          toast.info("Remove functionality coming soon");
-                          setTimeout(() => setRemovingItem(null), 1000);
-                        }}
-                        disabled={removingItem === item.id}
+                        onClick={() => handleRemoveItem(item.id)}
+                        disabled={removingItems.has(item.id)}
                         className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 disabled:opacity-50"
                         title="Remove item"
                       >
-                        {removingItem === item.id ? (
+                        {removingItems.has(item.id) ? (
                           <div className="w-5 h-5 border-2 border-red-300 border-t-red-500 rounded-full animate-spin"></div>
                         ) : (
                           <Trash2 className="h-5 w-5" />

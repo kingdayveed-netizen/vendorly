@@ -5,6 +5,20 @@ import { setCartItems, updateCartCount } from '../redux/slices/cartSlice';
 import { toast } from 'sonner';
 import { RootState } from '../redux/store';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+const getCartItemCount = (cart: Cart) =>
+  cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+const updateCartState = (
+  cart: Cart,
+  queryClient: ReturnType<typeof useQueryClient>,
+  dispatch: ReturnType<typeof useDispatch>
+) => {
+  queryClient.setQueryData(['cart'], cart);
+  dispatch(setCartItems(cart.items));
+  dispatch(updateCartCount(getCartItemCount(cart)));
+};
 
 export const useGetCart = () => {
   const dispatch = useDispatch();
@@ -102,5 +116,92 @@ export const useAddToCart = () => {
   return {
     addToCart: mutation.mutateAsync,
     isAdding: mutation.isPending,
+  };
+};
+
+export const useRemoveCartItem = () => {
+  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  const mutation = useMutation({
+    mutationFn: cartService.removeCartItem,
+
+    onMutate: async (itemId) => {
+      if (!isAuthenticated) {
+        toast.error('Session expired. Please sign in again.');
+        router.push('/login');
+        throw new Error('Not authenticated');
+      }
+
+      await queryClient.cancelQueries({ queryKey: ['cart'] });
+      const previousCart = queryClient.getQueryData<Cart>(['cart']);
+
+      if (previousCart) {
+        const optimisticCart = {
+          ...previousCart,
+          items: previousCart.items.filter((item) => item.id !== itemId),
+          updatedAt: new Date().toISOString(),
+        };
+
+        updateCartState(optimisticCart, queryClient, dispatch);
+      }
+
+      return { previousCart, itemId };
+    },
+
+    onError: (error: any, itemId, context) => {
+      if (error.message === 'Not authenticated') return;
+
+      const status = error?.response?.status;
+
+      if (status === 404) {
+        const currentCart = queryClient.getQueryData<Cart>(['cart']);
+        const cartToSync = currentCart || context?.previousCart;
+
+        if (cartToSync) {
+          updateCartState(
+            {
+              ...cartToSync,
+              items: cartToSync.items.filter((item) => item.id !== itemId),
+            },
+            queryClient,
+            dispatch
+          );
+        }
+
+        toast.error('That item is no longer in your cart.');
+        queryClient.invalidateQueries({ queryKey: ['cart'] });
+        return;
+      }
+
+      if (context?.previousCart) {
+        updateCartState(context.previousCart, queryClient, dispatch);
+      }
+
+      if (status === 401) {
+        toast.error('Session expired. Please sign in again.');
+        router.push('/login');
+        return;
+      }
+
+      if (status === 400) {
+        toast.error('Invalid cart item.');
+        return;
+      }
+
+      toast.error('Could not remove item. Please try again.');
+    },
+
+    onSuccess: (updatedCart) => {
+      updateCartState(updatedCart, queryClient, dispatch);
+      toast.success('Item removed from cart.');
+    },
+  });
+
+  return {
+    removeCartItem: mutation.mutateAsync,
+    isRemoving: mutation.isPending,
   };
 };

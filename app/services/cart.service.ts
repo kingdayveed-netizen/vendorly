@@ -38,4 +38,9 @@ export const cartService = {
     const { data } = await axiosInstance.post('/cart/add', dto);
     return data;
   },
+
+  removeCartItem: async (itemId: string): Promise<Cart> => {
+    const { data } = await axiosInstance.delete(`/cart/items/${itemId}`);
+    return data;
+  },
 };
