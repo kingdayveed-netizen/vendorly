@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { StoreProduct } from "@/redux/slices/storeSlice";
@@ -168,10 +169,16 @@ export default function ProductModal({
             <Button
               onClick={handleAddToCart}
               disabled={product.quantity === 0 || isAdding}
-              className="w-full bg-green-500 py-3 text-lg text-white hover:bg-green-600"
+              className="min-h-12 w-full rounded-lg bg-gray-900 px-5 py-3 text-base font-semibold text-white shadow-sm transition-all duration-200 hover:bg-green-600 hover:shadow-md focus:ring-green-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
             >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              {isAdding ? "Adding to cart..." : "Add to cart"}
+              {isAdding ? (
+                <Loader2 className="mr-2 h-5 w-5 flex-shrink-0 animate-spin" />
+              ) : (
+                <ShoppingCart className="mr-2 h-5 w-5 flex-shrink-0" />
+              )}
+              <span className="whitespace-nowrap">
+                {isAdding ? "Adding to cart" : "Add to cart"}
+              </span>
             </Button>
 
             <p className="mt-4 text-center text-xs text-gray-500">

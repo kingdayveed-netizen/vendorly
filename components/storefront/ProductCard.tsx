@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { Heart, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Heart, Loader2, ShoppingBag, ShoppingCart } from "lucide-react";
 import { StoreProduct } from "@/redux/slices/storeSlice";
 import { RootState } from "@/redux/store";
 import { useAddToCart } from "@/hooks/useCart";
@@ -94,18 +94,24 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
           {product.description}
         </p>
 
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-lg font-bold text-green-600">
+        <div className="space-y-3">
+          <span className="block text-lg font-bold text-green-600">
             NGN {product.price.toLocaleString()}
           </span>
 
           <button
             onClick={handleAddToCart}
             disabled={isOutOfStock || isAdding}
-            className="inline-flex items-center gap-1 rounded-lg bg-green-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="group/cart inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-green-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
           >
-            <ShoppingCart className="h-3.5 w-3.5" />
-            {isAdding ? "Adding..." : "Add to cart"}
+            {isAdding ? (
+              <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" />
+            ) : (
+              <ShoppingCart className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover/cart:-translate-y-0.5" />
+            )}
+            <span className="whitespace-nowrap">
+              {isAdding ? "Adding to cart" : "Add to cart"}
+            </span>
           </button>
         </div>
       </div>
