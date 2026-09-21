@@ -42,4 +42,3 @@ next-env.d.ts
 # Keep .gitkeep files
 !.gitkeep
 .gitignore
-branch_structure.json
